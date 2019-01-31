@@ -23,15 +23,15 @@ def fillUnivList(uList,html):
     for tr in soup.find('tbody').children:
         if isinstance(tr,bs4.element.Tag):
             tds=tr('td')
-            uList.append([tds[0].string,tds[1].string,tds[2].string])
+            uList.append([tds[0].string,tds[1].string,tds[2].string,tds[3].string])
 
 #先打印出表头；
 #用一个循环，把‘uList’中的数据按照格式打印出来。
 def printUnivList(uList,num):
-    print("{:^10}\t{:^6}\t{:^10}".format("学校排名","学校名称","总分"))
+    print("{:^10}\t{:^6}\t{:^10}\t{:^10}".format("学校排名","学校名称","城市","分数"))
     for i in range(num):
         u=uList[i]
-        print("{:^10}\t{:^6}\t{:^10}".format(u[0],u[1],u[2]))
+        print("{:^10}\t{:^6}\t{:^10}\t{:^10}".format(u[0],u[1],u[2],u[3]))
 
 def main():
     uinfo=[]
