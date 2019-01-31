@@ -1,0 +1,43 @@
+import requests
+from bs4 import BeautifulSoup
+import bs4
+
+#访问url对应的网址，获取服务器返回的网页内容；
+#对返回的状态码进行判断，如果是200状态码，则不抛出异常，否则抛出异常；
+#对网页的内容进行处理，根据网页的内容修改为合适的编码方式，如：utf-8
+#把处理好的网页内容返回
+def getHtmlText(url):
+    try:
+        r = requests.get(url)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        return r.text
+    except:
+        return ''
+
+#首先再页面中，找到‘tbody’标签，然后通过循环，把‘tbody’中的所有children找到；
+#然后在‘tbody’的所有‘children’中筛选出‘tr’标签；
+#最后找到‘tr’标签中所有的‘td’标签，把所有的‘td’标签放入到‘uList’队列中。
+def fillUnivList(uList,html):
+    soup=BeautifulSoup(html,'html.parser')
+    for tr in soup.find('tbody').children:
+        if isinstance(tr,bs4.element.Tag):
+            tds=tr('td')
+            uList.append([tds[0].string,tds[1].string,tds[2].string])
+
+#先打印出表头；
+#用一个循环，把‘uList’中的数据按照格式打印出来。
+def printUnivList(uList,num):
+    print("{:^10}\t{:^6}\t{:^10}".format("学校排名","学校名称","总分"))
+    for i in range(num):
+        u=uList[i]
+        print("{:^10}\t{:^6}\t{:^10}".format(u[0],u[1],u[2]))
+
+def main():
+    uinfo=[]
+    url='http://zuihaodaxue.cn/zuihaodaxuepaiming2016.html'
+    html=getHtmlText(url)
+    fillUnivList(uinfo,html)
+    printUnivList(uinfo,20)
+main()
+
