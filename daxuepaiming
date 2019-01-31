@@ -27,6 +27,7 @@ def fillUnivList(uList,html):
 
 #先打印出表头；
 #用一个循环，把‘uList’中的数据按照格式打印出来。
+#chr(12288)表示中文的空格
 def printUnivList(uList,num):
     tplt="{0:^10}\t{1:{4}^10}\t{2:^10}\t{3:^10}"
     print(tplt.format("学校排名","学校名称","城市","分数",chr(12288)))
