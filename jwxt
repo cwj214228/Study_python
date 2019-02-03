@@ -1,0 +1,82 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+from PIL import Image
+
+#使用‘requests’库，获取页面信息并返回。
+def getHtmlText(url,s):
+    try:
+        kv={'user-agent':'Mozilla/5.0'}
+        r = s.get(url,headers=kv)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        return r.text
+    except:
+        return '获取页面失败'
+
+#使用BeautifulSoup库解析页面，获取‘__VIEWSTATE’。
+def get__VIEWSTATE(html,__VIEWSTATE):
+    soup=BeautifulSoup(html,'html.parser')
+    __VIEWSTATE=soup.find('input').get('value')
+    return __VIEWSTATE
+
+#获取验证码，把验证码保存到本地.
+def getCheckImage(url,s):
+    try:
+        path='check.png'
+        head = {'User-Agent': 'Mozilla/5.0'}
+        r = s.get(url,headers=head)
+        r.raise_for_status()
+        r.encoding=r.apparent_encoding
+        Set_Cookie= r.headers.get('Set-Cookie')
+        print(s.cookies)
+        #print(r.text)
+        with open(path,'wb') as f:
+            f.write(r.content)
+        f.close()
+    except:
+        print("获取验证码失败")
+
+#提示用户输入账号和密码；
+#打开刚才下载到本地的验证码；
+#提示用户输入验证码；
+#构建post数据
+#使用post()方法提交数据给服务器
+def login_jwxt(url,__VIEWSTATE,s):
+    username='162011050'
+    userpassword='qq1343500013'
+    im = Image.open('check.png')
+    im.show()
+    checkImage=input('验证码：')
+    head={'User-Agent':'Mozilla/5.0',
+          'Referer':url+'default2.aspx',
+          'Origin':url}
+    param={'__VIEWSTATE':__VIEWSTATE,
+           'Button1':' ',
+           'hidPdrs':' ',
+           'hidsc':' ',
+           'lbLanguage':' ',
+           'RadioButtonList1':'学生',
+           'Textbox1':' ',
+           'TextBox2':userpassword,
+           'txtSecretCode':checkImage,
+           'txtUserName':username}
+    r=s.post(url+'default2.aspx',data=param,headers=head)
+    print(r.text)
+    r.raise_for_status()
+    r.encoding=r.apparent_encoding
+    pass
+
+
+def main():
+    #先建立会话，目的是自动管理‘Cookie’。
+    s = requests.session()
+    url='http://jwxt.nfsysu.cn/'
+    CheckImage_url='http://jwxt.nfsysu.cn/CheckCode.aspx'
+    __VIEWSTATE=''
+    html = getHtmlText(url,s)
+    __VIEWSTATE = get__VIEWSTATE(html,__VIEWSTATE)
+    getCheckImage(CheckImage_url,s)
+    print(__VIEWSTATE)
+    login_jwxt(url,__VIEWSTATE,s)
+main()
