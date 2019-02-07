@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from PIL import Image
+import urllib.parse
+
 
 #使用‘requests’库，获取页面信息并返回。
 def getHtmlText(url,s):
@@ -42,9 +44,7 @@ def getCheckImage(url,s):
 #提示用户输入验证码；
 #构建post数据
 #使用post()方法提交数据给服务器
-def login_jwxt(url,__VIEWSTATE,s):
-    username='162011050'
-    userpassword='qq1343500013'
+def login_jwxt(url,__VIEWSTATE,s,userid,userpassword):
     im = Image.open('check.png')
     im.show()
     checkImage=input('验证码：')
@@ -60,23 +60,110 @@ def login_jwxt(url,__VIEWSTATE,s):
            'Textbox1':' ',
            'TextBox2':userpassword,
            'txtSecretCode':checkImage,
-           'txtUserName':username}
+           'txtUserName':userid}
     r=s.post(url+'default2.aspx',data=param,headers=head)
-    print(r.text)
     r.raise_for_status()
     r.encoding=r.apparent_encoding
-    pass
+    return r.text
+
+#获取学生的姓名.
+def getStudentName(html,studentName):
+    soup=BeautifulSoup(html,'html.parser')
+    for div in soup.find_all('div','info'):
+        span=div('span')
+    return span[1].string.split('s')[0]
+
+#向服务器发送请求，获取新的"__VIEWSTATE"和‘zymc’的值。
+def getNew__VIEWSTATE(studentId,studentName,url,s,__VIEWSTATE,zymc):
+    try:
+        head = {'User-Agent': 'Mozilla/5.0',
+                'Referer': url + 'xs_main.aspx?xh=' + studentId,
+                'Host': url.split('/')[2]}
+        data = {'xh': studentId, 'xm': studentName, 'gnmkdm': 'N121101'}
+        r = s.post(url+"xsxk.aspx?xh="+studentId+"&xm="+studentName+"&gnmkdm=N121101",
+                   data=data,
+                   headers=head)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        soup = BeautifulSoup(r.text, 'html.parser')
+        __VIEWSTATE = ''
+        for ip in soup.find_all('form'):
+            inputs=ip('input')
+        return inputs[2].get('value'),inputs[3].get('value')
+    except:
+        print("请求失败")
+
+
+
+
+#点击选修课程,获取新的"__VIEWSTATE"的值。
+def xuanxiu(studentId,studentName,url,s,__VIEWSTATE,zymc):
+    head = {'User-Agent': 'Mozilla/5.0',
+            'Referer': url + 'xs_main.aspx?xh=' + studentId,
+            'Host': url.split('/')[2]}
+    data = {'xh': studentId,
+            'xm': studentName,
+            'gnmkdm': 'N121101',
+            '__EVENTTARGET':'',
+            '__EVENTARGUMENT':'',
+            '__VIEWSTATE':__VIEWSTATE,
+            'xx':'',
+            'zymc':zymc,
+            'Button2':'选修课程'}
+    r = s.post(url + "xsxk.aspx?xh=" + studentId + "&xm=" + urllib.parse.quote(studentName) + "&gnmkdm=N121101",
+               data=data,
+               headers=head)
+    r.raise_for_status
+    r.encoding=r.apparent_encoding
+    soup=BeautifulSoup(r.text,'html.parser')
+    __VIEWSTATE = ''
+    for ip in soup.find_all('form'):
+        inputs = ip('input')
+    return inputs[2].get('value')
+
+#点击快速选课
+def kuaisu(studentId,studentName,url,s,__VIEWSTATE):
+    head = {'User-Agent': 'Mozilla/5.0',
+            'Referer': url + 'xs_main.aspx?xh=' + studentId+"&xm="+urllib.parse.quote(studentName) +"&gnmkdm=N121101",
+            'Host': url.split('/')[2]}
+    data = {'xh': studentId,
+            'xm': studentName,
+            'gnmkdm': 'N121101',
+            '__EVENTTARGET': '',
+            '__EVENTARGUMENT': '',
+            '__VIEWSTATE': __VIEWSTATE,
+            'xx': '',
+            'zymc': '',
+            'Button7': '快速选课'}
+    r = s.post(url + "xsxk.aspx?xh=" + studentId + "&xm=" + urllib.parse.quote(studentName) + "&gnmkdm=N121101",
+               data=data,
+               headers=head)
+    r.raise_for_status
+    r.encoding = r.apparent_encoding
+    soup = BeautifulSoup(r.text, 'html.parser')
+    __VIEWSTATE = ''
+    for ip in soup.find_all('form'):
+        inputs = ip('input')
+    return inputs[2].get('value')
 
 
 def main():
     #先建立会话，目的是自动管理‘Cookie’。
     s = requests.session()
+    studentId='162011050'
+    studentPassword='qq1343500013'
     url='http://jwxt.nfsysu.cn/'
     CheckImage_url='http://jwxt.nfsysu.cn/CheckCode.aspx'
+    studentName=''
     __VIEWSTATE=''
+    zymc=''
     html = getHtmlText(url,s)
     __VIEWSTATE = get__VIEWSTATE(html,__VIEWSTATE)
     getCheckImage(CheckImage_url,s)
+    html=login_jwxt(url,__VIEWSTATE,s,studentId,studentPassword)
+    studentName=getStudentName(html,studentName)
+    __VIEWSTATE,zymc=getNew__VIEWSTATE(studentId,studentName,url,s,__VIEWSTATE,zymc)
+    __VIEWSTATE=xuanxiu(studentId, studentName, url, s, __VIEWSTATE, zymc)
+    __VIEWSTATE=kuaisu(studentId, studentName, url, s, __VIEWSTATE)
     print(__VIEWSTATE)
-    login_jwxt(url,__VIEWSTATE,s)
 main()
